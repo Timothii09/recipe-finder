@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Recipe Finder</title>
+</head>
+
+<body>
+  <button onclick="setLanguage('en')">English</button>
+  <button onclick="setLanguage('uk')">Українська</button>
+  <h1>Ingredient Recipe Finder</h1>
+  <input id="ingredients" placeholder="e.g. chicken, rice, tomato">
+  <button onclick="searchRecipes()">Search</button>
+
+  <div id="results"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+<script>
+const API_KEY = "a1a34bbe08354492b6bd2ebe52f3ec06";
+
+/* ---------------- LANGUAGE SYSTEM ---------------- */
+
+let currentLang = "en";
+
+const uiText = {
+  en: {
+    search: "Search",
+    ingredients: "Ingredients",
+    usedIngredients: "Used ingredients:",
+    instructions: "Instructions",
+    showRecipe: "Show Recipe",
+    showIngredients: "Show Ingredients",
+    loading: "Loading..."
+  },
+  uk: {
+    search: "Пошук",
+    ingredients: "Інгредієнти",
+    usedIngredients: "Використані інгредієнти:",
+    instructions: "Інструкції",
+    showRecipe: "Показати рецепт",
+    showIngredients: "Показати інгредієнти",
+    loading: "Завантаження..."
+  }
+};
+
+function setLanguage(lang) {
+  currentLang = lang;
+}
+
+/* ---------------- TRANSLATION API ---------------- */
+
+async function translate(text) {
+  if (currentLang === "en") {
+    return text;
+  }
+  const response = await fetch(
+    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|uk`
+  );
+
+  const data = await response.json();
+
+  return data.responseData.translatedText;
+}
+
+/* ---------------- SEARCH RECIPES ---------------- */
+
+async function searchRecipes() {
+
+  let ingredients = document.getElementById("ingredients").value;
+  const resultsDiv = document.getElementById("results");
+
+  resultsDiv.innerHTML = uiText[currentLang].loading;
+  if (currentLang === "uk") {
+    const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(ingredients)}&langpair=uk|en`);
+    const data = await response.json();
+    ingredients = data.responseData.translatedText;
+  }
+ 
+   
+  const response = await fetch(
+    `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredients}&number=5&apiKey=${API_KEY}`
+  );
+  const data = await response.json();
+  resultsDiv.innerHTML = "";
+
+  for (const recipe of data) {
+    const title = await translate(recipe.title)
+    const div = document.createElement("div");
+    div.classList.add("recipe");
+
+    div.innerHTML = `
+      <h3>${title}</h3>
+      <img src="${recipe.image}" width="200">
+      <p>${uiText[currentLang].usedIngredients} ${recipe.usedIngredientCount}</p>
+
+      <button onclick="showRecipe(${recipe.id})">
+        ${uiText[currentLang].showRecipe}
+      </button>
+
+      <button onclick="showIngredients(${recipe.id})">
+        ${uiText[currentLang].showIngredients}
+      </button>
+
+      <div id="ingredients-${recipe.id}"></div>
+      <div id="recipe-${recipe.id}"></div>
+    `;
+
+    resultsDiv.append(div);
+  };
+}
+
+/* ---------------- RECIPE ---------------- */
+
+async function showRecipe(recipeId) {
+
+  const recipeDiv = document.getElementById(`recipe-${recipeId}`);
+
+  if (recipeDiv.dataset.loaded === "true") {
+
+    recipeDiv.style.display =
+      recipeDiv.style.display === "none" ? "block" : "none";
+
+    return;
+  }
+
+  recipeDiv.innerHTML = uiText[currentLang].loading;
+
+  const response = await fetch(
+    `https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${API_KEY}`
+  );
+
+  const data = await response.json();
+
+  const title = await translate(data.title);
+  const instructions = await translate(
+    data.instructions || "No instructions available."
+  );
+
+  recipeDiv.innerHTML = `
+    <h4>${uiText[currentLang].instructions}</h4>
+    <h3>${title}</h3>
+    <p>${instructions}</p>
+  `;
+
+  recipeDiv.dataset.loaded = "true";
+}
+
+/* ---------------- INGREDIENTS ---------------- */
+
+async function showIngredients(recipeId) {
+
+  const ingredientsDiv = document.getElementById(`ingredients-${recipeId}`);
+
+  if (ingredientsDiv.dataset.loaded === "true") {
+
+    ingredientsDiv.style.display =
+      ingredientsDiv.style.display === "none" ? "block" : "none";
+
+    return;
+  }
+
+  ingredientsDiv.innerHTML = uiText[currentLang].loading;
+
+  const response = await fetch(
+    `https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${API_KEY}`
+  );
+
+  const data = await response.json();
+
+  let ingredients = "";
+
+  for (const ingredient of data.extendedIngredients) {
+
+    const translated = await translate(ingredient.original);
+
+    ingredients += `<li>${translated}</li>`;
+  }
+
+  ingredientsDiv.innerHTML = `
+    <h4>${uiText[currentLang].ingredients}</h4>
+    <ul>${ingredients}</ul>
+  `;
+
+  ingredientsDiv.dataset.loaded = "true";
+}
+</script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #2f65ab, #8697e3);
+    text-align: center;
+    padding: 30px;
+    margin: 0;
+  }
+
+  h1 {
+    color: white;
+    margin-bottom: 20px;
+  }
+
+  input {
+    padding: 12px;
+    width: 300px;
+    border: none;
+    border-radius: 8px;
+    outline: none;
+  }
+
+  button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    background: #d40719;
+    color: white;
+    cursor: pointer;
+    margin-left: 5px;
+    transition: 0.2s;
+    margin: 5px;
+  }
+
+  button:hover {
+    background: #b90b0b;
+    transform: scale(1.05);
+  }
+
+#results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.recipe {
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 10px;
+  background: white;
+}
+
+  .recipe:hover {
+    transform: translateY(-5px);
+  }
+
+.recipe img {
+  width: 100%;
+  border-radius: 8px;
+}
+.loading {
+  font-style: italic;
+  color: gray;
+}
+</style>
