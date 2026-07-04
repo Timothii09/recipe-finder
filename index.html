@@ -20,8 +20,6 @@
 <script>
 const API_KEY = "a1a34bbe08354492b6bd2ebe52f3ec06";
 
-/* ---------------- LANGUAGE SYSTEM ---------------- */
-
 let currentLang = "en";
 
 const uiText = {
@@ -49,22 +47,16 @@ function setLanguage(lang) {
   currentLang = lang;
 }
 
-/* ---------------- TRANSLATION API ---------------- */
-
 async function translate(text) {
   if (currentLang === "en") {
     return text;
   }
-  const response = await fetch(
-    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|uk`
-  );
+  const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|uk`);
 
   const data = await response.json();
 
   return data.responseData.translatedText;
 }
-
-/* ---------------- SEARCH RECIPES ---------------- */
 
 async function searchRecipes() {
 
@@ -79,9 +71,7 @@ async function searchRecipes() {
   }
  
    
-  const response = await fetch(
-    `https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredients}&number=5&apiKey=${API_KEY}`
-  );
+  const response = await fetch(`https://api.spoonacular.com/recipes/findByIngredients?ingredients=${ingredients}&number=5&apiKey=${API_KEY}`);
   const data = await response.json();
   resultsDiv.innerHTML = "";
 
@@ -95,13 +85,9 @@ async function searchRecipes() {
       <img src="${recipe.image}" width="200">
       <p>${uiText[currentLang].usedIngredients} ${recipe.usedIngredientCount}</p>
 
-      <button onclick="showRecipe(${recipe.id})">
-        ${uiText[currentLang].showRecipe}
-      </button>
+      <button onclick="showRecipe(${recipe.id})">${uiText[currentLang].showRecipe}</button>
 
-      <button onclick="showIngredients(${recipe.id})">
-        ${uiText[currentLang].showIngredients}
-      </button>
+      <button onclick="showIngredients(${recipe.id})">${uiText[currentLang].showIngredients}</button>
 
       <div id="ingredients-${recipe.id}"></div>
       <div id="recipe-${recipe.id}"></div>
@@ -111,32 +97,25 @@ async function searchRecipes() {
   };
 }
 
-/* ---------------- RECIPE ---------------- */
-
 async function showRecipe(recipeId) {
 
   const recipeDiv = document.getElementById(`recipe-${recipeId}`);
 
   if (recipeDiv.dataset.loaded === "true") {
 
-    recipeDiv.style.display =
-      recipeDiv.style.display === "none" ? "block" : "none";
+    recipeDiv.style.display = recipeDiv.style.display === "none" ? "block" : "none";
 
     return;
   }
 
   recipeDiv.innerHTML = uiText[currentLang].loading;
 
-  const response = await fetch(
-    `https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${API_KEY}`
-  );
+  const response = await fetch(`https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${API_KEY}`);
 
   const data = await response.json();
 
   const title = await translate(data.title);
-  const instructions = await translate(
-    data.instructions || "No instructions available."
-  );
+  const instructions = await translate(data.instructions || "No instructions available.");
 
   recipeDiv.innerHTML = `
     <h4>${uiText[currentLang].instructions}</h4>
@@ -147,25 +126,20 @@ async function showRecipe(recipeId) {
   recipeDiv.dataset.loaded = "true";
 }
 
-/* ---------------- INGREDIENTS ---------------- */
-
 async function showIngredients(recipeId) {
 
   const ingredientsDiv = document.getElementById(`ingredients-${recipeId}`);
 
   if (ingredientsDiv.dataset.loaded === "true") {
 
-    ingredientsDiv.style.display =
-      ingredientsDiv.style.display === "none" ? "block" : "none";
+    ingredientsDiv.style.display = ingredientsDiv.style.display === "none" ? "block" : "none";
 
     return;
   }
 
   ingredientsDiv.innerHTML = uiText[currentLang].loading;
 
-  const response = await fetch(
-    `https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${API_KEY}`
-  );
+  const response = await fetch(`https://api.spoonacular.com/recipes/${recipeId}/information?apiKey=${API_KEY}`);
 
   const data = await response.json();
 
@@ -205,7 +179,6 @@ async function showIngredients(recipeId) {
     width: 300px;
     border: none;
     border-radius: 8px;
-    outline: none;
   }
 
   button {
@@ -226,8 +199,7 @@ async function showIngredients(recipeId) {
   }
 
 #results {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  display: flex;
   gap: 15px;
 }
 
